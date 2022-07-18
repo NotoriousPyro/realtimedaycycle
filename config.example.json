@@ -1,0 +1,6 @@
+{
+ "enabled": true,
+ "recalculation-interval": 1000,
+ "timecycle-multiplier": 1,
+ "reference-date": "2022-07-16T05:00:00.000Z"
+}
