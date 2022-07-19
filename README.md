@@ -66,3 +66,76 @@ The config options are described as follows:
     | `2022-07-16T05:00:00.000Z` | `2022-07-17T05:00:00.000Z` | `24000` (1 Minecraft day)    |
     | `2022-07-16T05:00:00.000Z` | `2022-07-17T00:00:00.000Z` | `18000` (Minecraft midnight) |
     | `2022-07-16T06:00:00.000Z` | `2022-07-16T05:08:00.000Z` | `1000` (1 Minecraft hour)    |
+
+* `config-per-level`
+
+    If `true`, the values for each respective entry in `level-config` representing each unique level name (`level-name` in `server.properties`) override the configuration values specified at the root with the same names.
+
+    If `true`, if a respective level name entry under `level-config` does not exist, one will be created the first time that level is loaded with the plugin enabled.
+
+    *Default: `false`*
+    
+    Example:
+    ```json
+    {
+        "enabled": true,
+        "recalculation-interval": 1000,
+        "timecycle-multiplier": 1,
+        "reference-date": "2022-07-16T05:00:00.000Z",
+        "config-per-level": true,
+        "level-config": [
+            {
+                "enabled": true,
+                "timecycle-multiplier": 1,
+                "reference-date": "2022-07-17T05:00:00.000Z",
+                "name": "SubmergedTemple"
+            }
+        ]
+    }
+    ```
+
+    And you loaded up the level `SubmergedTemple`, then the `reference-date` (`2022-07-17T05:00:00.000Z`) in  `level-config` associated to this `name` will override the `reference-date` (`2022-07-16T05:00:00.000Z`) specified at the root.
+
+* `level-config`
+
+    Values in here will override the root config values if `config-per-level` is enabled.
+
+    Not all values can be overridden by per-level settings, e.g. `recalculation-interval` is not possible to set per-level.
+
+    The configurable values here are `enabled`, `timecycle-multiplier`, `reference-date` and `name` (which relates to the world name).
+
+    *While the server is running* you:
+    
+    * **MUST NOT**
+        * remove any items from the list.
+        * add new entries at the TOP of the list.
+    * **CAN**
+        * alter property values.
+        * add new entries at the BOTTOM of the list.
+
+    *Default: `[]`*
+
+    Example:
+    ```json
+    {
+        "enabled": true,
+        "recalculation-interval": 1000,
+        "timecycle-multiplier": 1,
+        "reference-date": "2022-07-16T05:00:00.000Z",
+        "config-per-level": true,
+        "level-config": [
+            {
+                "enabled": true,
+                "timecycle-multiplier": 1,
+                "reference-date": "2022-07-17T05:00:00.000Z",
+                "name": "SubmergedTemple"
+            },
+            {
+                "enabled": true,
+                "timecycle-multiplier": 1,
+                "reference-date": "2022-07-22T05:00:00.000Z",
+                "name": "OtherLevel"
+            }
+        ]
+    }
+    ```
