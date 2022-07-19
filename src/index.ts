@@ -1,18 +1,9 @@
-
 import { events } from 'bdsx/event';
 import { bedrockServer } from 'bdsx/launcher';
 import { GameRuleId } from 'bdsx/bds/gamerules';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-
-/*
-    These should probably never be changed. Unexpected things may happen.
-
-    BASE_DAY_LENGTH is the Minecraft daytime ticks: 24000.
-    REAL_MS_IN_DAY is the real miliseconds in a day: 86400000.
-*/
-const BASE_DAY_LENGTH = 24000;
-const REAL_MS_IN_DAY = 86400000;
+import { calculateTime } from './calculator';
 
 const pName = "NotoriousPyro's Real Time Day Cycle Plugin";
 const logger = (message: string) => console.log('[plugin:'+pName+'] ' + message);
@@ -23,6 +14,7 @@ class Options {
     'timecycle-multiplier' = 1.0;
     'reference-date' = new Date().toISOString();
 }
+
 export class Config {
     options: Options
     private lock: boolean
@@ -62,13 +54,13 @@ export class Config {
     }
 
     private save(): void {
-        const SAVE_RETRY = setInterval(() => this.save(), 5000);
+        const SAVE_RETRY_TIMEOUT = setTimeout(() => this.save(), 5000);
         if (this.lock) {
             logger(this.filename + ' is currently locked. Will retry in 5 seconds.');
             return;
         }
-        clearInterval(SAVE_RETRY);
         this.lock = true;
+        clearTimeout(SAVE_RETRY_TIMEOUT);
         try {
             writeFileSync(this.filename, JSON.stringify(this.options, null, ' '));
         }
@@ -77,11 +69,6 @@ export class Config {
             this.lock = false;
         }
     }
-}
-
-const calculateTime = () => {
-    const delta = Math.abs(new Date()[Symbol.toPrimitive]('number') - new Date(config.options['reference-date'])[Symbol.toPrimitive]('number'));
-    return Math.abs(((delta / REAL_MS_IN_DAY) * BASE_DAY_LENGTH) * config.options['timecycle-multiplier']) | 0;
 }
 
 const config = new Config();
@@ -93,14 +80,16 @@ events.levelTick.once(() => {
         return;
     }
     logger('Starting up.');
-    const SET_TIME_INTERVAL = setInterval(() => bedrockServer.level.setTime(calculateTime()), config.options['recalculation-interval']);
+    logger('Setting gamerule dodaylightcycle to false.');
+    bedrockServer.gameRules.setRule(GameRuleId.DoDaylightCycle, false);
+    const RECALCULATION_INTERVAL = setInterval(
+        () => bedrockServer.level.setTime(
+            calculateTime(config.options['reference-date'], config.options['timecycle-multiplier'])
+        ),
+        config.options['recalculation-interval']
+    );
     events.serverStop.on(() => {
         logger('Shutting down.');
-        clearInterval(SET_TIME_INTERVAL); // without this code, bdsx does not end even after BDS closed
+        clearInterval(RECALCULATION_INTERVAL); // without this code, bdsx does not end even after BDS closed
     });
-});
-
-events.serverOpen.on(() => {
-    logger('Disabling built-in daylight cycle.');
-    bedrockServer.gameRules.setRule(GameRuleId.DoDaylightCycle, false);
 });
